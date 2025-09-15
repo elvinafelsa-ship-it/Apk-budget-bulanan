@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Budget Harian</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="theme-color" content="#0f172a">
+  <style>
+    .thin::-webkit-scrollbar{height:8px;width:8px}.thin::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:9999px}
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 min-h-screen">
+  <!-- APP BAR -->
+  <header class="sticky top-0 z-10 bg-slate-900/80 backdrop-blur border-b border-slate-700">
+    <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+      <h1 class="text-lg font-bold tracking-tight">💸 Budget Harian</h1>
+      <div class="flex items-center gap-2 text-xs">
+        <button id="btnReset" class="px-3 py-1.5 rounded-xl border border-slate-600 hover:bg-slate-800 transition">Reset</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="max-w-md mx-auto px-4 py-6 space-y-5">
+    <!-- INPUTS -->
+    <section class="bg-slate-800/60 rounded-2xl border border-slate-700 p-5 shadow-xl space-y-4">
+      <div>
+        <label class="block text-sm mb-1">🏦 Saldo Awal</label>
+        <input id="saldoAwal" type="number" inputmode="decimal" class="w-full rounded-xl border-slate-600 bg-slate-900 px-3 py-2 focus:ring-2 focus:ring-emerald-400" placeholder="Contoh: 1000000" />
+      </div>
+      <div>
+        <label class="block text-sm mb-1">🎯 Budget Harian</label>
+        <input id="budgetHarian" type="number" inputmode="decimal" class="w-full rounded-xl border-slate-600 bg-slate-900 px-3 py-2 focus:ring-2 focus:ring-emerald-400" placeholder="Contoh: 200000" />
+      </div>
+
+      <div class="grid grid-cols-3 gap-2 items-end">
+        <div class="col-span-2">
+          <label class="block text-sm mb-1">💸 Nominal Pengeluaran</label>
+          <input id="pengeluaranHarian" type="number" inputmode="decimal" class="w-full rounded-xl border-slate-600 bg-slate-900 px-3 py-2 focus:ring-2 focus:ring-emerald-400" placeholder="Rp" />
+        </div>
+        <button id="btnTambah" class="h-10 rounded-xl bg-emerald-500 text-white text-sm hover:bg-emerald-600 transition">Tambah</button>
+      </div>
+      <div>
+        <label class="block text-sm mb-1">📝 Keperluan</label>
+        <input id="deskripsi" type="text" class="w-full rounded-xl border-slate-600 bg-slate-900 px-3 py-2 focus:ring-2 focus:ring-emerald-400" placeholder="Contoh: makan siang, transport, belanja" />
+      </div>
+
+      <p class="text-xs text-slate-400">Data tersimpan di perangkatmu (localStorage). Aman & offline.</p>
+    </section>
+
+    <!-- STATUS CARD -->
+    <section class="bg-slate-800/60 rounded-2xl border border-slate-700 p-5 shadow-xl">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-semibold">📊 Ringkasan Hari Ini</h2>
+        <span id="today" class="text-xs text-slate-400"></span>
+      </div>
+      <div class="grid grid-cols-2 gap-3 text-sm">
+        <div class="bg-slate-900 rounded-xl p-3 border border-slate-700">
+          <div class="text-xs text-slate-400">Saldo Awal</div>
+          <div id="outSaldo" class="font-semibold text-emerald-400">Rp0</div>
+        </div>
+        <div class="bg-slate-900 rounded-xl p-3 border border-slate-700">
+          <div class="text-xs text-slate-400">Budget Harian</div>
+          <div id="outBudget" class="font-semibold text-emerald-400">Rp0</div>
+        </div>
+        <div class="bg-slate-900 rounded-xl p-3 border border-slate-700">
+          <div class="text-xs text-slate-400">Terpakai Hari Ini</div>
+          <div id="outHarian" class="font-semibold text-rose-400">Rp0</div>
+        </div>
+        <div class="bg-slate-900 rounded-xl p-3 border border-slate-700">
+          <div class="text-xs text-slate-400">Sisa Budget</div>
+          <div id="outSisa" class="font-semibold text-emerald-400">Rp0</div>
+        </div>
+      </div>
+      <div class="mt-4 flex gap-2">
+        <button id="btnGenerate" class="px-4 py-2 rounded-xl bg-emerald-500 text-white text-sm hover:bg-emerald-600 transition">Generate</button>
+        <button id="btnShare" class="px-4 py-2 rounded-xl bg-green-600 text-white text-sm hover:bg-green-700 transition">📤 Share WA</button>
+      </div>
+    </section>
+
+    <!-- HISTORY -->
+    <section class="bg-slate-800/60 rounded-2xl border border-slate-700 p-5 shadow-xl">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-semibold">🧾 Riwayat Pengeluaran</h2>
+        <span id="count" class="text-xs text-slate-400">0 item</span>
+      </div>
+      <ul id="history" class="max-h-64 overflow-y-auto thin text-sm space-y-2"></ul>
+    </section>
+  </main>
+
+  <footer class="max-w-md mx-auto px-4 pb-10 text-center text-xs text-slate-500">
+    Dibuat dengan ❤️ pakai HTML + Tailwind + JavaScript.
+  </footer>
+
+<script>
+  const id = (x)=>document.getElementById(x);
+  const rp = (n)=> new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n||0));
+  const todayKey = ()=> new Date().toISOString().slice(0,10);
+
+  const KEY = 'budget_harian_state_v2';
+  const defaultState = { date: todayKey(), saldoAwal:0, budget:0, daily:0, items:[] };
+
+  function load(){
+    try{
+      const s = JSON.parse(localStorage.getItem(KEY)) || defaultState;
+      if(s.date !== todayKey()) return {...defaultState, saldoAwal: s.saldoAwal, budget: s.budget};
+      return s;
+    }catch{ return {...defaultState}; }
+  }
+  function save(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
+
+  let state = load();
+
+  function render(){
+    id('today').textContent = new Date().toLocaleDateString('id-ID', { weekday:'short', day:'2-digit', month:'short' });
+    id('saldoAwal').value = state.saldoAwal || '';
+    id('budgetHarian').value = state.budget || '';
+    id('outSaldo').textContent = rp(state.saldoAwal);
+    id('outBudget').textContent = rp(state.budget);
+    id('outHarian').textContent = rp(state.daily);
+    id('outSisa').textContent = rp((state.budget||0) - (state.daily||0));
+
+    const ul = id('history');
+    ul.innerHTML = '';
+    state.items.slice().reverse().forEach((it, idx)=>{
+      const li = document.createElement('li');
+      li.className = 'bg-slate-900 border border-slate-700 rounded-xl p-3 flex items-center justify-between';
+      li.innerHTML = `<div><div class='font-medium text-emerald-400'>${rp(it.value)}</div><div class='text-xs text-slate-400'>${it.desc || '-'} | ${it.time}</div></div>`+
+                     `<button class='text-xs px-2 py-1 rounded-lg border border-slate-600 hover:bg-slate-800' data-i='${state.items.length-1-idx}'>Hapus</button>`;
+      ul.appendChild(li);
+    });
+    id('count').textContent = `${state.items.length} item`;
+    ul.querySelectorAll('button[data-i]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        const i = Number(e.currentTarget.getAttribute('data-i'));
+        state.items.splice(i,1);
+        state.daily = state.items.reduce((a,b)=>a+Number(b.value),0);
+        save(state); render();
+      });
+    });
+  }
+
+  function addExpense(){
+    const v = Number(id('pengeluaranHarian').value);
+    const d = id('deskripsi').value.trim();
+    if(!v || v<=0) return toast('Nominal tidak valid');
+    state.items.push({ value: v, desc: d, time: new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) });
+    state.daily += v;
+    id('pengeluaranHarian').value = '';
+    id('deskripsi').value = '';
+    save(state); render();
+  }
+
+  function setSaldo(){ state.saldoAwal = Number(id('saldoAwal').value)||0; save(state); render(); }
+  function setBudget(){ state.budget = Number(id('budgetHarian').value)||0; save(state); render(); }
+
+  function generateText(){
+    const sisa = (state.budget||0) - (state.daily||0);
+    return `📊 Laporan Budget Harian\n`+
+           `🏦 Saldo Awal: ${rp(state.saldoAwal)}\n`+
+           `🎯 Budget Harian: ${rp(state.budget)}\n`+
+           `💸 Terpakai Hari Ini: ${rp(state.daily)}\n`+
+           `✅ Sisa Budget: ${rp(sisa)}`;
+  }
+
+  function shareWA(){
+    const text = generateText();
+    const wa = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(wa, '_blank');
+  }
+
+  function resetToday(){ state = { ...defaultState, saldoAwal: state.saldoAwal, budget: state.budget }; save(state); render(); }
+
+  function toast(msg){
+    const t = document.createElement('div');
+    t.textContent = msg;
+    t.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-xs px-3 py-2 rounded-xl shadow-lg';
+    document.body.appendChild(t);
+    setTimeout(()=> t.remove(), 1500);
+  }
+
+  id('btnTambah').addEventListener('click', addExpense);
+  id('saldoAwal').addEventListener('change', setSaldo);
+  id('budgetHarian').addEventListener('change', setBudget);
+  id('btnGenerate').addEventListener('click', ()=>{ toast('Laporan diperbarui'); });
+  id('btnShare').addEventListener('click', shareWA);
+  id('btnReset').addEventListener('click', resetToday);
+
+  render();
+</script>
+</body>
+</html>
